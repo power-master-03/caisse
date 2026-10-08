@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Caisse Asso — Caisse & Tickets (hors‑ligne)</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Topbar / Navigation -->
+  <header class="topbar no-print" id="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">🧾</div>
+        <div class="brand-text">
+          <div class="brand-title" id="brandTitle">Caisse Asso</div>
+          <div class="brand-sub" id="brandSub">Hors‑ligne • localStorage</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <span class="pill" id="sessionPill">Non connecté</span>
+        <button class="btn small" id="navCaisse" type="button">Caisse</button>
+        <button class="btn small" id="navStats" type="button">Statistiques</button>
+        <button class="btn small" id="navAdmin" type="button">Admin</button>
+        <button class="btn small danger" id="navLogout" type="button">Déconnexion</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- LOGIN -->
+  <main id="viewLogin" class="login-wrap">
+    <section class="card login-card">
+      <h1>Connexion</h1>
+      <p class="muted">
+        Application autonome (double‑clic sur <b>index.html</b>), compatible hors‑ligne.
+        Les données sont sauvegardées en <b>localStorage</b> (anti‑perte en cas de coupure).
+      </p>
+
+      <label for="loginCaisse">Sélection de la caisse</label>
+      <select id="loginCaisse">
+        <option value="C1">Caisse 1</option>
+        <option value="C2">Caisse 2</option>
+      </select>
+
+      <label for="loginPass">Mot de passe</label>
+      <input id="loginPass" type="password" placeholder="Mot de passe" autocomplete="current-password" />
+
+      <div class="actions">
+        <button class="btn primary" id="btnLogin" type="button">Se connecter</button>
+        <button class="btn" id="btnResetApp" type="button" title="Réinitialise TOUT (produits, commandes, mot de passe).">
+          Réinitialiser l'application…
+        </button>
+      </div>
+
+      <p class="help">
+        Mot de passe par défaut : <b>asso2025</b> (modifiable dans Admin).
+      </p>
+    </section>
+  </main>
+
+  <!-- CAISSE -->
+  <main id="viewCaisse" class="container hidden">
+    <div class="row">
+      <section class="col card">
+        <div class="head-row">
+          <div>
+            <h2>Produits</h2>
+            <div class="muted">1 consommation = 1 ticket (80mm). Touchez <b>+</b>/<b>−</b> pour ajuster.</div>
+          </div>
+          <div class="badges">
+            <span class="badge" id="eventBadge">Évènement</span>
+            <span class="badge" id="orderNextBadge">Prochaine commande : —</span>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="category-tabs-wrap">
+          <div class="category-tabs" id="categoryTabs" role="tablist" aria-label="Catégories produits">
+            <!-- injecté -->
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div id="productsGrid" class="grid-products" aria-live="polite"></div>
+      </section>
+
+      <section class="col card">
+        <h2>Commande en cours</h2>
+        <div class="muted">Récapitulatif (quantités et sous‑totaux).</div>
+        <div class="sep"></div>
+
+        <div id="cartEmpty" class="muted">Aucun produit sélectionné.</div>
+
+        <div id="cartTableWrap" class="hidden">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Produit</th>
+                  <th class="right">Qté</th>
+                  <th class="right">Prix</th>
+                  <th class="right">Sous‑total</th>
+                </tr>
+              </thead>
+              <tbody id="cartTbody"></tbody>
+            </table>
+          </div>
+
+          <div class="totals">
+            <div>
+              <div class="muted">Total</div>
+              <div class="big" id="totalBig">0,00 €</div>
+              <div class="help" id="totalTickets">0 ticket</div>
+            </div>
+
+            <div class="stack">
+              <button class="btn ok block" id="btnValidate" type="button">VALIDER LA COMMANDE</button>
+              <button class="btn danger block" id="btnClear" type="button">Annuler / Vider</button>
+            </div>
+          </div>
+
+          <p class="help">
+            À la validation : enregistrement + impression (tous les tickets) + remise à zéro pour le client suivant.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <!-- Barre mobile sticky -->
+    <div class="mobile-totalbar no-print" id="mobileTotalBar">
+      <div class="mobile-totalbar-inner">
+        <div>
+          <div class="muted small">Total</div>
+          <div class="mobile-total" id="mobileTotal">0,00 €</div>
+          <div class="muted small" id="mobileTickets">0 ticket</div>
+        </div>
+        <div class="mobile-actions">
+          <button class="btn ok" id="btnValidateMobile" type="button">Valider</button>
+          <button class="btn danger" id="btnClearMobile" type="button">Vider</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- STATISTIQUES -->
+  <main id="viewStats" class="container hidden">
+    <section class="card">
+      <div class="head-row">
+        <div>
+          <h2>Statistiques</h2>
+          <div class="muted">Données locales (localStorage). Export CSV + sauvegarde JSON disponibles.</div>
+        </div>
+        <div class="toolbar">
+          <button class="btn" id="btnExportCSV" type="button">Exporter CSV</button>
+          <button class="btn warn" id="btnBackup" type="button">Sauvegarde JSON</button>
+          <button class="btn" id="btnRestore" type="button">Restaurer JSON</button>
+          <input type="file" id="restoreFile" class="hidden" accept="application/json" />
+          <button class="btn danger" id="btnWipeOrders" type="button">Vider la base (commandes)</button>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="kpi" id="kpiGrid"></div>
+
+      <div class="sep"></div>
+
+      <div class="row">
+        <div class="col">
+          <h3>Ventes par produit</h3>
+          <div class="muted">Quantités et chiffre d'affaires par produit.</div>
+          <div class="sep"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Produit</th>
+                  <th class="right">Qté</th>
+                  <th class="right">CA</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyByProduct"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="col">
+          <h3>Répartition par caisse</h3>
+          <div class="muted">Commandes, tickets et CA par caisse.</div>
+          <div class="sep"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Caisse</th>
+                  <th class="right">Cmd</th>
+                  <th class="right">Tickets</th>
+                  <th class="right">CA</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyByCaisse"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <h3>Commandes</h3>
+      <div class="muted">Liste (plusieurs centaines possibles). Astuce : utilisez Ctrl+F.</div>
+      <div class="sep"></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date/heure</th>
+              <th>Caisse</th>
+              <th>Détails</th>
+              <th class="right">Total</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- ADMIN -->
+  <main id="viewAdmin" class="container hidden">
+    <div class="row">
+      <section class="col card">
+        <h2>Admin — Paramètres évènement & tickets</h2>
+        <div class="muted">Logo stocké en base64 dans localStorage (hors‑ligne).</div>
+
+        <label for="cfgOrg">Nom association / entête</label>
+        <input id="cfgOrg" placeholder="Ex: Association Les Amis du Village" />
+
+        <label for="cfgEventName">Nom / titre évènement</label>
+        <input id="cfgEventName" placeholder="Ex: Fête de l'association" />
+
+        <label for="cfgEventDate">Date évènement</label>
+        <input id="cfgEventDate" type="date" />
+
+        <label for="cfgMessage">Message bas de ticket</label>
+        <textarea id="cfgMessage" placeholder="Ex: Merci et bonne fête !"></textarea>
+
+        <label for="cfgLogoFile">Logo (image)</label>
+        <input id="cfgLogoFile" type="file" accept="image/*" />
+        <p class="help">Si l'image est très lourde, réduisez‑la (≈&lt; 1,5 Mo) pour éviter de saturer le stockage.</p>
+
+        <div class="logo-row">
+          <img id="cfgLogoPreview" alt="Aperçu logo" />
+          <button class="btn danger small" id="btnRemoveLogo" type="button">Supprimer le logo</button>
+        </div>
+
+        <div class="sep"></div>
+
+        <h3>Mot de passe</h3>
+        <label for="cfgNewPassword">Nouveau mot de passe</label>
+        <input id="cfgNewPassword" type="password" placeholder="Nouveau mot de passe" />
+        <button class="btn primary" id="btnChangePassword" type="button">Changer le mot de passe</button>
+
+        <div class="sep"></div>
+        <button class="btn primary" id="btnSaveConfig" type="button">Enregistrer les paramètres</button>
+      </section>
+
+      <section class="col card">
+        <h2>Admin — Produits (par catégories)</h2>
+        <div class="muted">CRUD complet. Désactiver un produit le masque côté caisse sans effacer l'historique.</div>
+
+        <div class="form-grid">
+          <div>
+            <label for="admCategory">Catégorie</label>
+            <select id="admCategory"></select>
+          </div>
+          <div>
+            <label for="prodName">Nom produit</label>
+            <input id="prodName" placeholder="Ex: Sandwich jambon-beurre" />
+          </div>
+          <div>
+            <label for="prodPrice">Prix (€)</label>
+            <input id="prodPrice" type="number" step="0.01" min="0" placeholder="4.00" />
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <button class="btn ok" id="btnAddProduct" type="button">Ajouter</button>
+          <button class="btn warn" id="btnUpdateProduct" type="button" disabled>Mettre à jour</button>
+          <button class="btn" id="btnCancelEdit" type="button" disabled>Annuler édition</button>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Catégorie</th>
+                <th>Produit</th>
+                <th class="right">Prix</th>
+                <th class="right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="productsTbody"></tbody>
+          </table>
+        </div>
+
+        <div class="sep"></div>
+
+        <details class="help">
+          <summary><b>Astuce</b> : ajouter une catégorie</summary>
+          <div style="margin-top:8px">
+            Les catégories sont modifiables dans <b>config.js</b> (phase 1). En phase 2, une base centralisée (Supabase) pourra synchroniser les caisses.
+          </div>
+        </details>
+      </section>
+    </div>
+  </main>
+
+  <!-- Zone impression -->
+  <div id="printArea"></div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Scripts : pas de fetch (CORS), config en global -->
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
