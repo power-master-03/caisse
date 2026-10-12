@@ -566,6 +566,37 @@
       </div>
     `;
 
+    const productChart = $("#productChart");
+    const topProducts = st.byProductArr.slice(0, 8);
+    const maxProductCA = Math.max(...topProducts.map(product => product.ca), 0);
+    productChart.innerHTML = topProducts.length ? topProducts.map((product, index) => {
+      const width = maxProductCA ? Math.max(3, product.ca / maxProductCA * 100) : 0;
+      return `
+        <div class="bar-row">
+          <div class="bar-label" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</div>
+          <div class="bar-track"><span class="bar-fill tone-${index % 4}" style="width:${width}%"></span></div>
+          <div class="bar-value">${eur(product.ca)}</div>
+        </div>
+      `;
+    }).join("") : `<div class="chart-empty">Aucune vente pour le moment.</div>`;
+
+    const caisseChart = $("#caisseChart");
+    const caisseValues = ["C1", "C2"].map(caisse => ({
+      caisse,
+      ca: Number(st.byCaisse[caisse]?.ca || 0)
+    }));
+    const maxCaisseCA = Math.max(...caisseValues.map(caisse => caisse.ca), 0);
+    caisseChart.innerHTML = caisseValues.map((caisse, index) => {
+      const width = maxCaisseCA ? Math.max(caisse.ca ? 3 : 0, caisse.ca / maxCaisseCA * 100) : 0;
+      return `
+        <div class="bar-row caisse-bar-row">
+          <div class="bar-label">${caisse.caisse}</div>
+          <div class="bar-track"><span class="bar-fill tone-${index + 1}" style="width:${width}%"></span></div>
+          <div class="bar-value">${eur(caisse.ca)}</div>
+        </div>
+      `;
+    }).join("");
+
     // Produit
     const tbodyP = $("#tbodyByProduct");
     tbodyP.innerHTML = "";
